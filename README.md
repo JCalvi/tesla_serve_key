@@ -1,29 +1,64 @@
-# Tesla Serve Key
+# tesla_serve_key
 
-Tesla Fleet public key hosted on Nabu Casa Server.
+Serve a Tesla public key from Home Assistant so it is available at:
+`/.well-known/appspecific/com.tesla.3p.public-key.pem`
 
-## Overview
+This repository contains a small helper to document how to serve your Tesla public key from Home Assistant by adding a tiny custom integration.
 
-This repository hosts the public key for Tesla Fleet API integration, making it available for Home Assistant and other services that need to interact with Tesla's Fleet API.
+Source of instructions: [home-assistant/core issue #135116 comment](https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270)
 
-## Usage
+## Installation (manual/custom integration)
 
-The public key can be accessed at:
-- Direct download: `tesla_fleet_public_key.pem`
-- Web interface: `index.html`
+1. Open a file/text editor in Home Assistant (the VS Code add-on is recommended).
+2. Navigate to the `/config` directory (default working directory for the VS Code add-on).
+3. Add your public key to `/config` with the filename:
+   ```
+   tesla-public-key.pem
+   ```
+4. Create a `custom_components` directory in `/config/` if it doesn't already exist.
+5. Create a directory `custom_components/tesla_serve_key/`.
+6. Add the following files into `custom_components/tesla_serve_key/`:
 
-## Integration
+   - `__init__.py`
+   ```python
+   from homeassistant.components.http import StaticPathConfig
 
-To use this key in your Tesla Fleet API integration:
+   DOMAIN = "tesla_serve_key"
 
-1. Download the public key from this repository
-2. Configure your application to use the key for Tesla API authentication
-3. Follow the [Tesla Fleet API documentation](https://developer.tesla.com/docs/fleet-api) for complete integration instructions
 
-## Hosting
+   async def async_setup(hass, config):
+       await hass.http.async_register_static_paths(
+           [
+               StaticPathConfig(
+                   "/.well-known/appspecific/com.tesla.3p.public-key.pem",
+                   "/config/tesla-public-key.pem",
+                   False,
+               )
+           ]
+       )
+       return True
+   ```
 
-This service is designed to be hosted on GitHub Pages or any static file server, making the public key accessible to Home Assistant and other integration services.
+   - `manifest.json`
+   ```json
+   {
+     "domain": "tesla_serve_key",
+     "name": "Tesla Serve Key",
+     "version": "0.1.0"
+   }
+   ```
 
-## License
+7. Open your `configuration.yaml` and add the integration entry:
+   ```yaml
+   tesla_serve_key:
+   ```
 
-MIT License - See LICENSE file for details
+8. Restart Home Assistant.
+
+9. Verify your public key is being served by visiting:
+   ```txt
+   https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem
+   ```
+   Replace `yourdomain.tld` with your Home Assistant public URL.
+
+That's it — this tiny custom integration registers a static path so Home Assistant will serve the `tesla-public-key.pem` file from `/config` at the Tesla-specific well-known path.
