@@ -1,1 +1,5 @@
-
+{
+  "domain": "tesla_serve_key",
+  "name": "Tesla Serve Key",
+  "version": "0.1.0"
+}
