@@ -1,59 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Fleet Public Key</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        .key-container {
-            background-color: #f4f4f4;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        pre {
-            background-color: #fff;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            overflow-x: auto;
-        }
-        a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Tesla Serve Key — Instructions</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height:1.5; }
+    pre { background:#f6f8fa; padding:1rem; overflow:auto; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; }
+    h1,h2 { margin-top:1.4rem; }
+  </style>
 </head>
 <body>
-    <h1>Tesla Fleet Public Key</h1>
-    <p>This service hosts the public key for Tesla Fleet API integration hosted on Nabu Casa Server.</p>
-    
-    <div class="key-container">
-        <h2>Public Key</h2>
-        <p>Download the public key: <a href="tesla_fleet_public_key.pem">tesla_fleet_public_key.pem</a></p>
-    </div>
-    
-    <h2>Usage</h2>
-    <p>To use this public key with the Tesla Fleet API:</p>
-    <ol>
-        <li>Download the public key file</li>
-        <li>Configure your Tesla Fleet API integration to use this key</li>
-        <li>Follow the Tesla Fleet API documentation for further instructions</li>
-    </ol>
-    
-    <h2>About</h2>
-    <p>This service is provided by Nabu Casa for Home Assistant Tesla integration.</p>
+  <h1>Tesla Serve Key — Quick Setup</h1>
+  <p>
+    This page documents how to serve a Tesla public key from Home Assistant so it is available at:
+    <code>/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
+  </p>
+
+  <h2>Steps</h2>
+  <ol>
+    <li>Place your public key file in the Home Assistant <code>/config</code> directory named <code>tesla-public-key.pem</code>.</li>
+    <li>Create <code>custom_components/tesla_serve_key/</code> under <code>/config</code> and add the integration files:</li>
+  </ol>
+
+  <h3><code>__init__.py</code></h3>
+  <pre><code>from homeassistant.components.http import StaticPathConfig
+
+DOMAIN = "tesla_serve_key"
+
+
+async def async_setup(hass, config):
+    await hass.http.async_register_static_paths(
+        [
+            StaticPathConfig(
+                "/.well-known/appspecific/com.tesla.3p.public-key.pem",
+                "/config/tesla-public-key.pem",
+                False,
+            )
+        ]
+    )
+    return True
+</code></pre>
+
+  <h3><code>manifest.json</code></h3>
+  <pre><code>{
+  "domain": "tesla_serve_key",
+  "name": "Tesla Serve Key",
+  "version": "0.1.0"
+}
+</code></pre>
+
+  <ol start="3">
+    <li>Add the integration entry to <code>configuration.yaml</code>:</li>
+  </ol>
+  <pre><code>tesla_serve_key:</code></pre>
+
+  <ol start="4">
+    <li>Restart Home Assistant.</li>
+    <li>Confirm the key is served at:
+      <code>https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
+    </li>
+  </ol>
+
+  <p>Instructions adapted from a Home Assistant discussion: <a href="https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270">https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270</a></p>
 </body>
 </html>
