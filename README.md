@@ -9,7 +9,7 @@ Source of instructions: [home-assistant/core issue #135116 comment](https://gith
 
 ## Installation HACS
 
-1. Add JCalvi github to HACS repos.
+1. Add this repo to HACS custom repositories.
 2. Add your public key to `/config` with the filename:
    ```
    tesla-public-key.pem
