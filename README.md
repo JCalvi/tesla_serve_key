@@ -7,6 +7,25 @@ This repository contains a small helper to document how to serve your Tesla publ
 
 Source of instructions: [home-assistant/core issue #135116 comment](https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270)
 
+## Installation HACS
+
+1. Add JCalvi github to HACS repos.
+2. Add your public key to `/config` with the filename:
+   ```
+   tesla-public-key.pem
+   ```
+3. Open your `configuration.yaml` and add the integration entry:
+   ```yaml
+   tesla_serve_key:
+   ```
+4. Restart Home Assistant.
+
+5. Verify your public key is being served by visiting:
+   ```txt
+   https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem
+   ```
+
+
 ## Installation (manual/custom integration)
 
 1. Open a file/text editor in Home Assistant (the VS Code add-on is recommended).
