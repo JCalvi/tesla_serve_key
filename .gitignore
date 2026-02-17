@@ -17,3 +17,11 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# PEM files (should not be committed to repository)
+*.pem
