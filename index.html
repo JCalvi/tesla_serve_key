@@ -8,38 +8,102 @@
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height:1.5; }
     pre { background:#f6f8fa; padding:1rem; overflow:auto; }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; }
-    h1,h2 { margin-top:1.4rem; }
+    h1,h2,h3 { margin-top:1.4rem; }
+    .version { color: #666; font-size: 0.9em; }
   </style>
 </head>
 <body>
-  <h1>Tesla Serve Key — Quick Setup</h1>
+  <h1>Tesla Serve Key — Quick Setup <span class="version">(v0.2.0)</span></h1>
   <p>
     This page documents how to serve a Tesla public key from Home Assistant so it is available at:
     <code>/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
   </p>
 
+  <h2>What's New in v0.2.0</h2>
+  <ul>
+    <li><strong>Multiple file location support</strong>: The integration automatically searches for your Tesla public key in multiple locations</li>
+    <li><strong>Better logging</strong>: See which PEM file is found and served in the Home Assistant logs</li>
+    <li><strong>Hard-coded unauthenticated endpoint</strong>: Authentication is disabled for the well-known path (cannot be changed)</li>
+  </ul>
+
   <h2>Steps</h2>
   <ol>
-    <li>Place your public key file in the Home Assistant <code>/config</code> directory named <code>tesla-public-key.pem</code>.</li>
+    <li>Place your public key file in one of the supported locations (the integration will use the first file it finds):
+      <ul>
+        <li><code>/config/tesla-public-key.pem</code> (recommended)</li>
+        <li><code>/config/tesla_fleet_public_key.pem</code></li>
+        <li><code>/ssl/tesla-public-key.pem</code></li>
+      </ul>
+    </li>
     <li>Create <code>custom_components/tesla_serve_key/</code> under <code>/config</code> and add the integration files:</li>
   </ol>
 
   <h3><code>__init__.py</code></h3>
-  <pre><code>from homeassistant.components.http import StaticPathConfig
+  <pre><code>"""Tesla Serve Key integration for Home Assistant.
+
+Serves the Tesla Fleet API public key at the well-known path.
+"""
+import logging
+import os
+
+from homeassistant.components.http import StaticPathConfig
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
+
+_LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "tesla_serve_key"
 
+# Well-known path for Tesla Fleet API public key (fixed, cannot be changed)
+WELL_KNOWN_PATH = "/.well-known/appspecific/com.tesla.3p.public-key.pem"
 
-async def async_setup(hass, config):
+# PEM file locations to check (in priority order)
+# The integration will use the first file that exists
+PEM_FILE_LOCATIONS = [
+    "/config/tesla-public-key.pem",
+    "/config/tesla_fleet_public_key.pem",
+    "/ssl/tesla-public-key.pem",
+]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the Tesla Serve Key integration.
+    
+    This integration serves a Tesla Fleet API public key at the well-known path.
+    The endpoint is unauthenticated (authentication hard-coded to False).
+    """
+    # Find the first PEM file that exists
+    pem_file_path = None
+    for file_path in PEM_FILE_LOCATIONS:
+        if os.path.isfile(file_path):
+            pem_file_path = file_path
+            _LOGGER.info("Found Tesla public key at: %s", file_path)
+            break
+    
+    if pem_file_path is None:
+        _LOGGER.error(
+            "No Tesla public key file found. Searched locations: %s",
+            ", ".join(PEM_FILE_LOCATIONS)
+        )
+        return False
+    
+    # Register the static path with authentication disabled (hard-coded to False)
     await hass.http.async_register_static_paths(
         [
             StaticPathConfig(
-                "/.well-known/appspecific/com.tesla.3p.public-key.pem",
-                "/config/tesla-public-key.pem",
-                False,
+                WELL_KNOWN_PATH,
+                pem_file_path,
+                False,  # Authentication disabled (unauthenticated endpoint)
             )
         ]
     )
+    
+    _LOGGER.info(
+        "Tesla Serve Key: Serving %s from %s (unauthenticated)",
+        WELL_KNOWN_PATH,
+        pem_file_path
+    )
+    
     return True
 </code></pre>
 
@@ -47,7 +111,11 @@ async def async_setup(hass, config):
   <pre><code>{
   "domain": "tesla_serve_key",
   "name": "Tesla Serve Key",
-  "version": "0.1.0"
+  "documentation": "https://github.com/JCalvi/tesla_serve_key",
+  "codeowners": ["@JCalvi"],
+  "requirements": [],
+  "version": "0.2.0",
+  "iot_class": "local_push"
 }
 </code></pre>
 
@@ -58,6 +126,7 @@ async def async_setup(hass, config):
 
   <ol start="4">
     <li>Restart Home Assistant.</li>
+    <li>Check the Home Assistant logs to see which PEM file was found.</li>
     <li>Confirm the key is served at:
       <code>https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
     </li>
