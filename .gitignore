@@ -17,6 +17,8 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+__pycache__/
+*.pyc
 
 # PEM files (users should place these in their HA config)
 *.pem
