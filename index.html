@@ -2,67 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Tesla Serve Key — Instructions</title>
+  <title>Tesla Serve Key — Home Assistant Integration</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height:1.5; }
-    pre { background:#f6f8fa; padding:1rem; overflow:auto; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; }
-    h1,h2 { margin-top:1.4rem; }
+    pre { background:#f6f8fa; padding:1rem; overflow:auto; border-radius: 6px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; background:#f6f8fa; padding:0.2rem 0.4rem; border-radius:3px; }
+    pre code { background: transparent; padding: 0; }
+    h1,h2,h3 { margin-top:1.4rem; }
+    .feature-list { list-style: none; padding-left: 0; }
+    .feature-list li:before { content: "✅ "; margin-right: 0.5rem; }
+    .important { background: #fff3cd; padding: 1rem; border-left: 4px solid #ffc107; margin: 1rem 0; border-radius: 4px; }
   </style>
 </head>
 <body>
-  <h1>Tesla Serve Key — Quick Setup</h1>
+  <h1>Tesla Serve Key — Home Assistant Integration</h1>
   <p>
-    This page documents how to serve a Tesla public key from Home Assistant so it is available at:
+    This integration serves your Tesla Fleet API public key from Home Assistant at the required well-known path:
     <code>/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
   </p>
 
-  <h2>Steps</h2>
+  <h2>Features</h2>
+  <ul class="feature-list">
+    <li>Serves Tesla public key at the fixed well-known path required by Tesla Fleet API</li>
+    <li>Unauthenticated endpoint (no authentication required)</li>
+    <li>Automatically searches for PEM file in multiple locations</li>
+    <li>Clear error logging if PEM file is not found</li>
+    <li>No configuration required beyond placing the PEM file</li>
+  </ul>
+
+  <h2>Quick Setup</h2>
+  
+  <h3>Step 1: Install the Integration</h3>
+  <p>
+    <strong>Via HACS (Recommended):</strong>
+  </p>
   <ol>
-    <li>Place your public key file in the Home Assistant <code>/config</code> directory named <code>tesla-public-key.pem</code>.</li>
-    <li>Create <code>custom_components/tesla_serve_key/</code> under <code>/config</code> and add the integration files:</li>
+    <li>Add this repository to HACS as a custom repository</li>
+    <li>Install "Tesla Serve Key" via HACS</li>
+  </ol>
+  
+  <p>
+    <strong>Manual Installation:</strong>
+  </p>
+  <ol>
+    <li>Copy the <code>tesla_serve_key</code> folder from this repository</li>
+    <li>Place it in your Home Assistant <code>/config/custom_components/</code> directory</li>
   </ol>
 
-  <h3><code>__init__.py</code></h3>
-  <pre><code>from homeassistant.components.http import StaticPathConfig
+  <h3>Step 2: Place Your Public Key</h3>
+  <p>
+    Place your Tesla Fleet API public key in the Home Assistant <code>/config</code> directory with one of these filenames (checked in priority order):
+  </p>
+  <ul>
+    <li><code>tesla-public-key.pem</code> (recommended)</li>
+    <li><code>tesla_fleet_public_key.pem</code></li>
+    <li><code>tesla-fleet-public-key.pem</code></li>
+  </ul>
 
-DOMAIN = "tesla_serve_key"
-
-
-async def async_setup(hass, config):
-    await hass.http.async_register_static_paths(
-        [
-            StaticPathConfig(
-                "/.well-known/appspecific/com.tesla.3p.public-key.pem",
-                "/config/tesla-public-key.pem",
-                False,
-            )
-        ]
-    )
-    return True
-</code></pre>
-
-  <h3><code>manifest.json</code></h3>
-  <pre><code>{
-  "domain": "tesla_serve_key",
-  "name": "Tesla Serve Key",
-  "version": "0.1.0"
-}
-</code></pre>
-
-  <ol start="3">
-    <li>Add the integration entry to <code>configuration.yaml</code>:</li>
-  </ol>
+  <h3>Step 3: Enable the Integration</h3>
+  <p>Add the following to your <code>configuration.yaml</code>:</p>
   <pre><code>tesla_serve_key:</code></pre>
 
-  <ol start="4">
-    <li>Restart Home Assistant.</li>
-    <li>Confirm the key is served at:
-      <code>https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
-    </li>
+  <h3>Step 4: Restart Home Assistant</h3>
+  <p>Restart Home Assistant to load the integration.</p>
+
+  <h3>Step 5: Verify</h3>
+  <p>
+    Confirm the key is being served by visiting:
+    <code>https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
+  </p>
+
+  <div class="important">
+    <strong>Important:</strong> The integration does NOT include the PEM file. You must provide your own Tesla Fleet API public key file.
+  </div>
+
+  <h2>How It Works</h2>
+  <p>The integration:</p>
+  <ol>
+    <li>Searches for your Tesla public key in the Home Assistant config directory</li>
+    <li>Registers a static path handler that serves the file at the required well-known path</li>
+    <li>Ensures the endpoint is unauthenticated (accessible without Home Assistant login)</li>
   </ol>
 
-  <p>Instructions adapted from a Home Assistant discussion: <a href="https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270">https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270</a></p>
+  <h2>Security Notes</h2>
+  <ul>
+    <li>The endpoint is <strong>intentionally unauthenticated</strong> as required by Tesla Fleet API</li>
+    <li>Only serve your <strong>public key</strong> (never include your private key)</li>
+    <li>The well-known path is <strong>fixed</strong> and cannot be changed (Tesla requirement)</li>
+  </ul>
+
+  <h2>Troubleshooting</h2>
+  <p>
+    <strong>Integration fails to load:</strong>
+  </p>
+  <ul>
+    <li>Check Home Assistant logs for error messages</li>
+    <li>Ensure the PEM file exists in one of the supported locations</li>
+    <li>Verify the PEM file has correct permissions</li>
+  </ul>
+
+  <p>
+    <strong>Key not accessible:</strong>
+  </p>
+  <ul>
+    <li>Verify Home Assistant is accessible via HTTPS</li>
+    <li>Check for conflicts with other integrations</li>
+    <li>Test from outside your network if Tesla servers need access</li>
+  </ul>
+
+  <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e1e4e8;">
+  
+  <p style="font-size: 0.9rem; color: #586069;">
+    Instructions adapted from: 
+    <a href="https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270">Home Assistant Core Issue #135116</a>
+    <br>
+    Repository: <a href="https://github.com/JCalvi/tesla_serve_key">github.com/JCalvi/tesla_serve_key</a>
+  </p>
 </body>
 </html>

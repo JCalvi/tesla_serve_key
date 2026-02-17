@@ -17,3 +17,10 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
