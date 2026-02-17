@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from aiohttp import web
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
@@ -27,35 +27,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register the view to serve the PEM file
     hass.http.register_view(TeslaPemView)
 
-    # Register static path for optional UI (compatibly with different HA versions)
+    # Register static path for optional UI
     integration_dir = Path(__file__).parent
     www_dir = integration_dir / "www"
     if www_dir.exists():
         try:
-            # Prefer older sync API if present
-            if hasattr(hass.http, "register_static_path"):
-                hass.http.register_static_path(
-                    "/tesla_serve_key",
-                    str(www_dir),
-                    cache_headers=False,
-                )
-            # Newer HA might expose an async plural mapping API
-            elif hasattr(hass.http, "async_register_static_paths"):
-                # async_register_static_paths expects a mapping of url -> path
-                await hass.http.async_register_static_paths(
-                    {"/tesla_serve_key": str(www_dir)}, cache_headers=False
-                )
-            # Or an async singular API
-            elif hasattr(hass.http, "async_register_static_path"):
-                await hass.http.async_register_static_path(
-                    "/tesla_serve_key",
-                    str(www_dir),
-                    cache_headers=False,
-                )
-            else:
-                _LOGGER.warning(
-                    "Unable to register static path for Tesla Serve Key UI: no supported API found on hass.http"
-                )
+            await hass.http.async_register_static_paths(
+                [StaticPathConfig("/tesla_serve_key", str(www_dir), cache_headers=False)]
+            )
             _LOGGER.info("Registered static path for Tesla Serve Key UI at /tesla_serve_key")
         except Exception:  # noqa: BLE001 - log unexpected errors but continue
             _LOGGER.exception("Failed to register static path for Tesla Serve Key UI")
@@ -73,10 +52,11 @@ class TeslaPemView(HomeAssistantView):
     """View to serve the Tesla public key PEM file."""
 
     url = "/.well-known/appspecific/com.tesla.3p.public-key.pem"
-    name = "api:tesla_serve_key:pem"
+    name = "tesla:pem"
     requires_auth = False
 
-    def _get_pem_file_path(self, hass: HomeAssistant) -> Optional[str]:
+    @staticmethod
+    def _get_pem_file_path(hass: HomeAssistant) -> Optional[str]:
         """Find the PEM file in the HA config directory.
 
         Checks in priority order:
@@ -102,8 +82,8 @@ class TeslaPemView(HomeAssistantView):
         )
         return None
 
-    async def get(self, request: web.Request) -> web.Response:
-        """Handle GET requests for the PEM file."""
+    async def get(self, request):
+        """Serve the PEM file."""
         hass = request.app["hass"]
         pem_path = self._get_pem_file_path(hass)
 
@@ -124,7 +104,8 @@ class TeslaPemView(HomeAssistantView):
                 headers={"Cache-Control": "public, max-age=86400"},
             )
         except Exception:  # pragma: no cover - runtime read error
-            _LOGGER.exception("Failed to read PEM file at %s", pem_path)
+            _LOGGER.exception("Failed to read Tesla PEM file at %s", pem_path)
             return web.Response(
-                text="Internal error reading PEM file", status=500
+                text="Error reading PEM file.",
+                status=500,
             )
