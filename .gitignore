@@ -17,3 +17,6 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# PEM files (users should place these in their HA config)
+*.pem
