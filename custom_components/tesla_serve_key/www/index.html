@@ -1,89 +1,334 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Tesla Serve Key</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 1rem; max-width: 900px; margin: auto; }
-    pre { background:#f6f8fa; padding:1rem; border-radius:6px; white-space:pre-wrap; word-break:break-all; }
-    button { padding:.5rem 1rem; margin-top:.5rem; margin-right:.5rem; }
-    .muted { color: #666; font-size: 0.95rem; }
-    .notice { background:#fff7e6; padding:.75rem; border:1px solid #ffe6a1; border-radius:6px; margin-bottom:1rem; }
-    .status { padding:.75rem; border-radius:6px; margin-bottom:1rem; display:none; }
-    .status.success { background:#d4edda; border:1px solid #c3e6cb; color:#155724; }
-    .status.error { background:#f8d7da; border:1px solid #f5c6cb; color:#721c24; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Serve Key - PEM Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo svg {
+            width: 80px;
+            height: 80px;
+            fill: #667eea;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .status-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .status-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .check-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+        
+        .check-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .check-button:active {
+            transform: translateY(0);
+        }
+        
+        .check-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            display: none;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .result-box.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result-box.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .result-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .pem-preview {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .info-section {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .info-section h3 {
+            color: #1976D2;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .info-section p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .info-section code {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Tesla Serve Key</h1>
-  <div class="notice">
-    <strong>Note:</strong> The public key file (PEM) is not included in this integration. Place the PEM in your Home Assistant configuration directory as described below.
-  </div>
-
-  <div id="status" class="status" role="status" aria-live="polite"></div>
-
-  <p class="muted">This page fetches the Tesla public key from the fixed well-known path:</p>
-  <pre>/.well-known/appspecific/com.tesla.3p.public-key.pem</pre>
-
-  <h2>Public key</h2>
-  <pre id="pem">Loading…</pre>
-  <div>
-    <button id="copy">Copy to clipboard</button>
-    <button id="refresh">Refresh</button>
-  </div>
-
-  <h3>Where to put the PEM</h3>
-  <ol>
-    <li><code>&lt;config&gt;/.well-known/appspecific/com.tesla.3p.public-key.pem</code> (recommended)</li>
-    <li><code>&lt;config&gt;/tesla-public-key.pem</code></li>
-  </ol>
-
-  <p class="muted">Do not place the PEM inside the <code>custom_components/tesla_serve_key</code> integration folder. This repository intentionally does not include the PEM.</p>
-
-  <h3>Troubleshooting</h3>
-  <p class="muted">If this page shows "Failed to load key" or the key is missing, verify that the PEM file exists at one of the locations above and that Home Assistant can read it. Check Home Assistant logs for more details.</p>
-  <p class="muted">For more details see the project README: <a href="https://github.com/JCalvi/tesla_serve_key">https://github.com/JCalvi/tesla_serve_key</a></p>
-
-  <script>
-    function showStatus(message, type) {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = message;
-      statusEl.className = 'status ' + type;
-      statusEl.style.display = 'block';
-      setTimeout(() => {
-        statusEl.style.display = 'none';
-      }, 3000);
-    }
-
-    async function load() {
-      const pemEl = document.getElementById('pem');
-      pemEl.textContent = 'Loading…';
-      try {
-        const r = await fetch('/.well-known/appspecific/com.tesla.3p.public-key.pem');
-        if (!r.ok) {
-          throw new Error('HTTP ' + r.status);
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                <circle cx="50" cy="35" r="8" fill="currentColor"/>
+                <rect x="35" y="50" width="30" height="25" rx="3" fill="currentColor"/>
+                <circle cx="42" cy="62" r="3" fill="white"/>
+                <circle cx="58" cy="62" r="3" fill="white"/>
+            </svg>
+        </div>
+        
+        <h1>Tesla Serve Key</h1>
+        <p class="subtitle">PEM File Verification Tool</p>
+        
+        <div class="status-box" id="statusBox">
+            <div class="status-item">
+                <span class="status-icon">📄</span>
+                <span class="status-text">
+                    <span class="status-label">Integration:</span> 
+                    <span id="integrationStatus">Loading...</span>
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-icon">🔗</span>
+                <span class="status-text">
+                    <span class="status-label">Endpoint:</span> 
+                    <code id="pemUrl">/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
+                </span>
+            </div>
+        </div>
+        
+        <button class="check-button" id="checkButton" onclick="checkPEM()">
+            Check PEM File
+        </button>
+        
+        <div class="result-box" id="resultBox">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-content" id="resultContent"></div>
+            <div class="pem-preview" id="pemPreview" style="display: none;"></div>
+        </div>
+        
+        <div class="info-section">
+            <h3>ℹ️ How to Use</h3>
+            <p><strong>1.</strong> Place your Tesla public key at:<br>
+            <code>/config/.well-known/appspecific/com.tesla.3p.public-key.pem</code></p>
+            <p><strong>2.</strong> Click "Check PEM File" to verify it's accessible</p>
+            <p><strong>3.</strong> Use the verification in Home Assistant:<br>
+            Settings → Devices & Services → Tesla Serve Key → ⚙️ Configure</p>
+        </div>
+    </div>
+    
+    <script>
+        // Get base URL
+        const baseUrl = window.location.origin;
+        const pemPath = '/.well-known/appspecific/com.tesla.3p.public-key.pem';
+        const pemUrl = baseUrl + pemPath;
+        
+        // Update URL display
+        document.getElementById('pemUrl').textContent = pemUrl;
+        document.getElementById('integrationStatus').textContent = 'Active ✓';
+        
+        async function checkPEM() {
+            const button = document.getElementById('checkButton');
+            const resultBox = document.getElementById('resultBox');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultContent = document.getElementById('resultContent');
+            const pemPreview = document.getElementById('pemPreview');
+            
+            // Disable button
+            button.disabled = true;
+            button.textContent = 'Checking...';
+            
+            // Hide previous results
+            resultBox.style.display = 'none';
+            pemPreview.style.display = 'none';
+            
+            try {
+                const response = await fetch(pemUrl);
+                
+                if (response.ok) {
+                    const content = await response.text();
+                    
+                    // Check if it's a valid PEM
+                    if (content.includes('BEGIN PUBLIC KEY') && content.includes('END PUBLIC KEY')) {
+                        resultBox.className = 'result-box success';
+                        resultBox.style.display = 'block';
+                        resultTitle.textContent = '✅ Success!';
+                        resultContent.innerHTML = `
+                            <strong>PEM file is being served correctly!</strong><br><br>
+                            <strong>URL:</strong> ${pemUrl}<br>
+                            <strong>Status:</strong> HTTP ${response.status}<br>
+                            <strong>Content-Type:</strong> ${response.headers.get('content-type') || 'application/x-pem-file'}
+                        `;
+                        
+                        // Show preview
+                        pemPreview.style.display = 'block';
+                        pemPreview.textContent = content.substring(0, 200) + (content.length > 200 ? '...' : '');
+                    } else {
+                        throw new Error('File found but does not appear to be a valid PEM file');
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultBox.className = 'result-box error';
+                resultBox.style.display = 'block';
+                resultTitle.textContent = '❌ Error';
+                resultContent.innerHTML = `
+                    <strong>PEM file is not accessible</strong><br><br>
+                    <strong>URL:</strong> ${pemUrl}<br>
+                    <strong>Error:</strong> ${error.message}<br><br>
+                    <strong>Troubleshooting:</strong><br>
+                    • Ensure the PEM file is placed at: <code>/config/.well-known/appspecific/com.tesla.3p.public-key.pem</code><br>
+                    • Restart Home Assistant after placing the file<br>
+                    • Check that the Tesla Serve Key integration is installed
+                `;
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = 'Check PEM File';
+            }
         }
-        const txt = await r.text();
-        pemEl.textContent = txt;
-      } catch (e) {
-        pemEl.textContent = 'Failed to load key. Ensure the PEM is placed in your Home Assistant config directory (see instructions above).\n\nError: ' + e;
-      }
-    }
-
-    document.getElementById('copy').addEventListener('click', async () => {
-      const txt = document.getElementById('pem').textContent;
-      try {
-        await navigator.clipboard.writeText(txt);
-        showStatus('Copied to clipboard!', 'success');
-      } catch (err) {
-        showStatus('Copy failed: ' + err, 'error');
-      }
-    });
-
-    document.getElementById('refresh').addEventListener('click', load);
-
-    load();
-  </script>
+        
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkPEM, 500);
+        });
+    </script>
 </body>
 </html>
