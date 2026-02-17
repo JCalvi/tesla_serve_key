@@ -14,6 +14,12 @@ Thumbs.db
 *.bak
 .~lock.*
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
 # Build artifacts
 dist/
 build/
