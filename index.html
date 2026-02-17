@@ -1,117 +1,76 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Tesla Serve Key — Instructions</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <title>Tesla Fleet Public Key</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height:1.5; }
-    pre { background:#f6f8fa; padding:1rem; overflow:auto; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; }
-    h1,h2 { margin-top:1.4rem; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 1rem; max-width: 900px; margin: auto; }
+    pre { background:#f6f8fa; padding:1rem; border-radius:6px; white-space:pre-wrap; word-break:break-all; }
+    button { padding:.5rem 1rem; margin-top:.5rem; margin-right:.5rem; }
+    .muted { color: #666; font-size: 0.95rem; }
+    .notice { background:#fff7e6; padding:.75rem; border:1px solid #ffe6a1; border-radius:6px; margin-bottom:1rem; }
   </style>
 </head>
 <body>
-  <h1>Tesla Serve Key — Quick Setup</h1>
-  <p>
-    This page documents how to serve a Tesla public key from Home Assistant so it is available at:
-    <code>/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
-  </p>
+  <h1>Tesla Fleet Public Key</h1>
+  <div class="notice">
+    <strong>Note:</strong> The public key file (PEM) is not included in this integration. Place the PEM in your Home Assistant configuration directory as described below.
+  </div>
 
-  <h2>Steps</h2>
+  <p class="muted">This page fetches the Tesla Fleet public key from the fixed well-known path:</p>
+  <pre>/.well-known/appspecific/com.tesla.3p.public-key.pem</pre>
+
+  <p class="muted">If the PEM is not found at that path, this page will also look for <code>tesla-public-key.pem</code> in your Home Assistant config directory.</p>
+
+  <h2>Public key</h2>
+  <pre id="pem">Loading…</pre>
+  <div>
+    <button id="copy">Copy to clipboard</button>
+    <button id="refresh">Refresh</button>
+  </div>
+
+  <h3>Where to put the PEM</h3>
   <ol>
-    <li>Place your public key file in the Home Assistant <code>/config</code> directory with one of these names (checked in order):
-      <ul>
-        <li><code>tesla-public-key.pem</code> (recommended)</li>
-        <li><code>.tesla/tesla-public-key.pem</code> (in a hidden .tesla directory)</li>
-        <li><code>tesla_fleet_public_key.pem</code> (alternative name)</li>
-      </ul>
-    </li>
-    <li>Create <code>custom_components/tesla_serve_key/</code> under <code>/config</code> and add the integration files:</li>
+    <li><code>&lt;config&gt;/.well-known/appspecific/com.tesla.3p.public-key.pem</code> (recommended)</li>
+    <li><code>&lt;config&gt;/tesla-public-key.pem</code></li>
   </ol>
 
-  <h3><code>__init__.py</code></h3>
-  <pre><code>import logging
-import os
+  <p class="muted">Do not place the PEM inside the <code>custom_components/tesla_serve_key</code> integration folder. This repository intentionally does not include the PEM.</p>
 
-from homeassistant.components.http import StaticPathConfig
+  <h3>Troubleshooting</h3>
+  <p class="muted">If this page shows "Failed to load key" or the key is missing, verify that the PEM file exists at one of the locations above and that Home Assistant can read it. Check Home Assistant logs for more details.</p>
+  <p class="muted">For more details see the project README: https://github.com/JCalvi/tesla_serve_key</p>
 
-DOMAIN = "tesla_serve_key"
+  <script>
+    async function load() {
+      const pemEl = document.getElementById('pem');
+      pemEl.textContent = 'Loading…';
+      try {
+        const r = await fetch('/.well-known/appspecific/com.tesla.3p.public-key.pem');
+        if (!r.ok) {
+          throw new Error('HTTP ' + r.status);
+        }
+        const txt = await r.text();
+        pemEl.textContent = txt;
+      } catch (e) {
+        pemEl.textContent = 'Failed to load key. Ensure the PEM is placed in your Home Assistant config directory (see README).\n\nError: ' + e;
+      }
+    }
 
-_LOGGER = logging.getLogger(__name__)
+    document.getElementById('copy').addEventListener('click', async () => {
+      const txt = document.getElementById('pem').textContent;
+      try {
+        await navigator.clipboard.writeText(txt);
+        alert('Copied!');
+      } catch (err) {
+        alert('Copy failed: ' + err);
+      }
+    });
 
-# Priority-ordered list of possible PEM file locations
-PEM_FILE_LOCATIONS = [
-    "/config/tesla-public-key.pem",
-    "/config/.tesla/tesla-public-key.pem",
-    "/config/tesla_fleet_public_key.pem",
-]
+    document.getElementById('refresh').addEventListener('click', load);
 
-
-def find_pem_file():
-    """Find the first existing PEM file from the list of possible locations."""
-    for pem_path in PEM_FILE_LOCATIONS:
-        if os.path.isfile(pem_path):
-            _LOGGER.info("Found Tesla PEM file at: %s", pem_path)
-            return pem_path
-    
-    _LOGGER.error(
-        "Tesla PEM file not found in any of the expected locations: %s",
-        ", ".join(PEM_FILE_LOCATIONS)
-    )
-    return None
-
-
-async def async_setup(hass, config):
-    """Set up the Tesla Serve Key integration."""
-    pem_file_path = find_pem_file()
-    
-    if pem_file_path is None:
-        _LOGGER.error(
-            "Cannot set up Tesla Serve Key: PEM file not found. "
-            "Please place your Tesla public key file in one of these locations: %s",
-            ", ".join(PEM_FILE_LOCATIONS)
-        )
-        return False
-    
-    await hass.http.async_register_static_paths(
-        [
-            StaticPathConfig(
-                "/.well-known/appspecific/com.tesla.3p.public-key.pem",
-                pem_file_path,
-                False,
-            )
-        ]
-    )
-    
-    _LOGGER.info(
-        "Tesla Serve Key integration set up successfully. "
-        "Serving PEM from: /.well-known/appspecific/com.tesla.3p.public-key.pem"
-    )
-    
-    return True
-</code></pre>
-
-  <h3><code>manifest.json</code></h3>
-  <pre><code>{
-  "domain": "tesla_serve_key",
-  "name": "Tesla Serve Key",
-  "version": "0.2.0"
-}
-</code></pre>
-
-  <ol start="3">
-    <li>Add the integration entry to <code>configuration.yaml</code>:</li>
-  </ol>
-  <pre><code>tesla_serve_key:</code></pre>
-
-  <ol start="4">
-    <li>Restart Home Assistant.</li>
-    <li>Confirm the key is served at:
-      <code>https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem</code>
-    </li>
-  </ol>
-
-  <p>Instructions adapted from a Home Assistant discussion: <a href="https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270">https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270</a></p>
+    load();
+  </script>
 </body>
 </html>
