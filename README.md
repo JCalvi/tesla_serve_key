@@ -1,180 +1,157 @@
-# Tesla Serve Key
+# Tesla Serve Key - Home Assistant Integration
 
-A Home Assistant custom integration that serves your Tesla public key from the well-known path required by Tesla Fleet API:
-`/.well-known/appspecific/com.tesla.3p.public-key.pem`
+A Home Assistant custom integration that serves your Tesla public key at the required well-known path for Tesla API third-party integrations.
 
-This integration allows you to use Tesla Fleet API with Home Assistant by serving your public key from the correct path without requiring a separate web server.
+## Features
 
-**Important**: This integration does NOT include the Tesla public key PEM file. You must generate and place it yourself.
+- ✅ Serves PEM file at `/.well-known/appspecific/com.tesla.3p.public-key.pem`
+- ✅ Easy verification through Home Assistant UI
+- ✅ Automatic file discovery from config directory
+- ✅ No authentication required for the endpoint (as per Tesla requirements)
 
 ## Installation
 
-### Option 1: HACS (Recommended)
+### HACS (Recommended)
 
-1. Add this repository to HACS as a custom repository:
-   - In HACS, go to Integrations
-   - Click the three dots menu (⋮) in the top right
-   - Select "Custom repositories"
-   - Add URL: `https://github.com/JCalvi/tesla_serve_key`
-   - Category: Integration
-   - Click "Add"
+1. Open HACS in Home Assistant
+2. Click on "Integrations"
+3. Click the three dots in the top right corner
+4. Select "Custom repositories"
+5. Add `https://github.com/JCalvi/ha-tesla-key-server` as an Integration
+6. Click "Install"
+7. Restart Home Assistant
 
-2. Install the integration:
-   - Find "Tesla Serve Key" in HACS
-   - Click "Download"
-   - Restart Home Assistant
+### Manual Installation
 
-3. Add the integration:
-   - Go to Settings → Devices & Services
-   - Click "+ Add Integration"
-   - Search for "Tesla Serve Key"
-   - Follow the setup wizard (you'll only need to provide a friendly name)
-
-### Option 2: Manual Installation
-
-1. Download this repository
-2. Copy the `custom_components/tesla_serve_key` folder to your Home Assistant `custom_components` directory
-3. Restart Home Assistant
-4. Add the integration via Settings → Devices & Services → Add Integration → Tesla Serve Key
+1. Copy the `custom_components/tesla_serve_key` folder to your Home Assistant's `custom_components` directory
+2. Restart Home Assistant
 
 ## Setup
 
-### 1. Generate Your Tesla Public/Private Key Pair
+### 1. Generate Your Tesla Keys
 
-If you haven't already, generate your key pair:
+Follow Tesla's documentation to generate your public/private key pair for third-party API access.
 
-```bash
-openssl ecparam -name prime256v1 -genkey -noout -out tesla-private-key.pem
-openssl ec -in tesla-private-key.pem -pubout -out tesla-public-key.pem
-```
+### 2. Place Your PEM File
 
-**Security Warning**: Keep `tesla-private-key.pem` secure and private. Never commit it to version control or share it publicly.
+Place your Tesla public key PEM file in one of these locations:
 
-### 2. Place the Public Key
+- **Recommended:** `<config>/.well-known/appspecific/com.tesla.3p.public-key.pem`
+- **Alternative:** `<config>/tesla-public-key.pem`
 
-Place your `tesla-public-key.pem` file in one of these locations in your Home Assistant config directory (checked in priority order):
+Where `<config>` is your Home Assistant configuration directory (usually `/config`).
 
-1. `<config>/.well-known/appspecific/com.tesla.3p.public-key.pem` (recommended)
-2. `<config>/tesla-public-key.pem`
+### 3. Add the Integration
 
-**Example for location 1** (recommended):
-```bash
-mkdir -p /config/.well-known/appspecific/
-cp tesla-public-key.pem /config/.well-known/appspecific/com.tesla.3p.public-key.pem
-```
+1. Go to **Settings** → **Devices & Services**
+2. Click **+ Add Integration**
+3. Search for **Tesla Serve Key**
+4. Click to add it
+5. Enter a friendly name (default: "Tesla Serve Key")
+6. Click **Submit**
 
-**Example for location 2**:
-```bash
-cp tesla-public-key.pem /config/tesla-public-key.pem
-```
+## Verify PEM is Being Served
 
-**Important**: Do NOT place the PEM file inside the `custom_components/tesla_serve_key` folder.
+### Method 1: Home Assistant UI
 
-### 3. Restart Home Assistant
+1. Go to **Settings** → **Devices & Services**
+2. Find **Tesla Serve Key** integration
+3. Click the **⚙️ Configure** button
+4. A notification will appear showing:
+   - ✅ Local file status
+   - ✅ HTTP verification results
+   - ✅ PEM file preview
 
-After placing the PEM file, restart Home Assistant for the changes to take effect.
+### Method 2: Manual Check
 
-## Verification
+Visit: `http://your-home-assistant-url/.well-known/appspecific/com.tesla.3p.public-key.pem`
 
-### Method 1: Using curl (recommended)
+You should see your PEM file content (starts with `-----BEGIN PUBLIC KEY-----`)
 
-From any device that can reach your Home Assistant instance:
+### Method 3: Optional Web UI
 
-```bash
-curl https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem
-```
+Visit: `http://your-home-assistant-url/tesla_serve_key/`
 
-You should see your public key content starting with:
-```
------BEGIN PUBLIC KEY-----
-...
------END PUBLIC KEY-----
-```
-
-### Method 2: Using the built-in UI
-
-Navigate to: `https://yourdomain.tld/tesla_serve_key/`
-
-This convenience page will:
-- Display your public key
-- Show where to place the PEM file
-- Provide troubleshooting information
-- Allow you to copy the key to clipboard
-
-### Method 3: Using a web browser
-
-Simply visit: `https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem`
-
-You should see the PEM content displayed in your browser.
+A simple verification page is available (if the `www` directory exists).
 
 ## Configuration
 
-The integration uses a config flow and can be configured through the Home Assistant UI:
-- **Name**: A friendly name for the integration (default: "Tesla Serve Key")
-- The endpoint path (`/.well-known/appspecific/com.tesla.3p.public-key.pem`) is fixed and cannot be changed
-- Authentication is disabled for this endpoint to allow Tesla servers to access it
+No additional configuration is required. The integration will:
 
-## Security Notes
-
-1. **Public Key Only**: This integration serves your PUBLIC key only. Never expose your private key.
-
-2. **No Authentication**: The well-known path is intentionally served without authentication (`requires_auth = False`) because Tesla's servers need to access it.
-
-3. **Safe to Expose**: The public key is safe to expose publicly - it cannot be used to impersonate you or access your Tesla account.
-
-4. **Cache Control**: The PEM is served with `Cache-Control: public, max-age=86400` headers (24-hour cache) for optimal performance.
-
-5. **File Not Included**: This repository intentionally does not include any PEM files. You must generate and manage your own keys.
+1. Automatically detect your PEM file location
+2. Serve it at the required Tesla endpoint
+3. Handle all HTTP requests without authentication
 
 ## Troubleshooting
 
-### Integration doesn't appear in UI
+### PEM File Not Found
 
-- Ensure you have restarted Home Assistant after installing the integration
-- Check that `manifest.json` has `"config_flow": true`
-- Check Home Assistant logs for any errors
+**Error:** `PEM file not found`
 
-### 404 Error when accessing the well-known path
+**Solution:** Ensure your PEM file is placed at one of the supported locations:
+- `<config>/.well-known/appspecific/com.tesla.3p.public-key.pem`
+- `<config>/tesla-public-key.pem`
 
-- Verify the PEM file exists at one of the supported locations
-- Check file permissions (Home Assistant must be able to read it)
-- Check Home Assistant logs for error messages about PEM file location
-- Ensure the integration is properly installed and enabled
+### 404 Error When Accessing URL
 
-### Key not found / File read errors
+**Issue:** Cannot access `/.well-known/appspecific/com.tesla.3p.public-key.pem`
 
-The integration reads the PEM file on every request. Check:
-1. File exists at a supported location
-2. File has correct permissions (readable by Home Assistant)
-3. File path is correct (case-sensitive on Linux)
-4. Check Home Assistant logs for specific error messages
+**Solutions:**
+1. Restart Home Assistant after placing the PEM file
+2. Check that the integration is installed and loaded
+3. Verify the PEM file exists using the verification feature
+4. Check Home Assistant logs for errors
 
-### Key not updating
+### PEM Verification Shows "Invalid Format"
 
-The integration reads the file from disk on every request, so updates should be immediate. If changes aren't reflected:
-1. Verify you updated the file at the correct location
-2. Clear your browser cache
-3. Wait for the 24-hour cache to expire, or use `curl` with `--no-cache` header
+**Issue:** File exists but shows invalid PEM format
 
-## Version History
+**Solution:** Ensure your PEM file:
+- Starts with `-----BEGIN PUBLIC KEY-----`
+- Ends with `-----END PUBLIC KEY-----`
+- Is a valid public key file (not a private key or certificate)
 
-### 0.2.0
-- Added config flow for UI-based installation
-- Implemented HomeAssistantView with proper security settings
-- Added optional convenience UI at `/tesla_serve_key/`
-- Updated documentation with comprehensive setup and verification steps
-- Changed to read PEM file from HA config directory on each request
-- Support for two PEM file locations in priority order
+## File Structure
 
-### 0.1.0
-- Initial release
-- Basic static file serving
+```
+custom_components/tesla_serve_key/
+├── __init__.py           # Main integration logic
+├── config_flow.py        # Configuration and options flow
+├── manifest.json         # Integration metadata
+├── strings.json          # UI translations
+└── www/                  # Optional web UI
+    └── index.html        # Verification page
+```
 
-## Credits
+## Technical Details
 
-Original instructions from: [home-assistant/core issue #135116](https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270)
+### Endpoint Details
+
+- **URL:** `/.well-known/appspecific/com.tesla.3p.public-key.pem`
+- **Method:** GET
+- **Authentication:** None required
+- **Content-Type:** `application/x-pem-file`
+- **Cache:** 24 hours
+
+### Security Considerations
+
+- The endpoint does NOT require authentication (as per Tesla's requirements)
+- Only serves the PUBLIC key (never expose your private key)
+- File is read on every request to ensure latest version is served
+- Endpoint is read-only
+
+## Support
+
+If you encounter issues:
+
+1. Check the Home Assistant logs
+2. Use the built-in verification feature
+3. Open an issue on GitHub: https://github.com/JCalvi/ha-tesla-key-server/issues
 
 ## License
 
-See LICENSE file for details.
+MIT License - See LICENSE file for details
 
+## Credits
+
+Developed for the Home Assistant community to simplify Tesla third-party API integration.
