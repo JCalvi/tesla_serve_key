@@ -27,7 +27,7 @@ PEM_FILE_LOCATIONS = [
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Tesla Serve Key integration.
-    
+
     This integration serves a Tesla Fleet API public key at the well-known path.
     The endpoint is unauthenticated (authentication hard-coded to False).
     """
@@ -38,14 +38,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             pem_file_path = file_path
             _LOGGER.info("Found Tesla public key at: %s", file_path)
             break
-    
+
     if pem_file_path is None:
         _LOGGER.error(
             "No Tesla public key file found. Searched locations: %s",
             ", ".join(PEM_FILE_LOCATIONS)
         )
         return False
-    
+
     # Register the static path with authentication disabled (hard-coded to False)
     await hass.http.async_register_static_paths(
         [
@@ -56,11 +56,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
         ]
     )
-    
+
     _LOGGER.info(
         "Tesla Serve Key: Serving %s from %s (unauthenticated)",
         WELL_KNOWN_PATH,
         pem_file_path
     )
-    
+
     return True
