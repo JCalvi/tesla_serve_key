@@ -1,5 +1,11 @@
 {
   "domain": "tesla_serve_key",
   "name": "Tesla Serve Key",
-  "version": "0.2.0"
+  "version": "0.2.0",
+  "documentation": "https://github.com/JCalvi/tesla_serve_key",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [],
+  "config_flow": true,
+  "iot_class": "local_polling"
 }
