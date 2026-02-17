@@ -7,7 +7,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 
-from . import DOMAIN
+DOMAIN = "tesla_serve_key"
 
 DATA_SCHEMA = vol.Schema(
     {
