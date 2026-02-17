@@ -7,18 +7,6 @@ This repository contains a small helper to document how to serve your Tesla publ
 
 Source of instructions: [home-assistant/core issue #135116 comment](https://github.com/home-assistant/core/issues/135116#issuecomment-2609041270)
 
-## GitHub Pages Setup (For Repository Maintainers)
-
-This repository uses GitHub Pages to serve documentation. To enable GitHub Pages deployment:
-
-1. Navigate to the repository **Settings** > **Pages**
-2. Under **Build and deployment**, set **Source** to **GitHub Actions**
-3. Save the configuration
-
-The workflow in `.github/workflows/deploy.yml` will automatically deploy the `index.html` file to GitHub Pages on every push to the `main` branch or when manually triggered.
-
-Once configured, the documentation will be available at: `https://[username].github.io/tesla_serve_key/`
-
 ## Installation HACS
 
 1. Add this repo to HACS custom repositories.
@@ -26,13 +14,9 @@ Once configured, the documentation will be available at: `https://[username].git
    - `tesla-public-key.pem` (recommended)
    - `.tesla/tesla-public-key.pem` (in a hidden .tesla directory)
    - `tesla_fleet_public_key.pem` (alternative name)
-3. Open your `configuration.yaml` and add the integration entry:
-   ```yaml
-   tesla_serve_key:
-   ```
-4. Restart Home Assistant.
+3. Restart Home Assistant.
 
-5. Verify your public key is being served by visiting:
+4. Verify your public key is being served by visiting:
    ```txt
    https://yourdomain.tld/.well-known/appspecific/com.tesla.3p.public-key.pem
    ```
