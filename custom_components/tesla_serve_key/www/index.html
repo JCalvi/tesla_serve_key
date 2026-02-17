@@ -10,6 +10,9 @@
     button { padding:.5rem 1rem; margin-top:.5rem; margin-right:.5rem; }
     .muted { color: #666; font-size: 0.95rem; }
     .notice { background:#fff7e6; padding:.75rem; border:1px solid #ffe6a1; border-radius:6px; margin-bottom:1rem; }
+    .status { padding:.75rem; border-radius:6px; margin-bottom:1rem; display:none; }
+    .status.success { background:#d4edda; border:1px solid #c3e6cb; color:#155724; }
+    .status.error { background:#f8d7da; border:1px solid #f5c6cb; color:#721c24; }
   </style>
 </head>
 <body>
@@ -17,6 +20,8 @@
   <div class="notice">
     <strong>Note:</strong> The public key file (PEM) is not included in this integration. Place the PEM in your Home Assistant configuration directory as described below.
   </div>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
 
   <p class="muted">This page fetches the Tesla public key from the fixed well-known path:</p>
   <pre>/.well-known/appspecific/com.tesla.3p.public-key.pem</pre>
@@ -41,6 +46,16 @@
   <p class="muted">For more details see the project README: <a href="https://github.com/JCalvi/tesla_serve_key">https://github.com/JCalvi/tesla_serve_key</a></p>
 
   <script>
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+      statusEl.style.display = 'block';
+      setTimeout(() => {
+        statusEl.style.display = 'none';
+      }, 3000);
+    }
+
     async function load() {
       const pemEl = document.getElementById('pem');
       pemEl.textContent = 'Loading…';
@@ -60,9 +75,9 @@
       const txt = document.getElementById('pem').textContent;
       try {
         await navigator.clipboard.writeText(txt);
-        alert('Copied!');
+        showStatus('Copied to clipboard!', 'success');
       } catch (err) {
-        alert('Copy failed: ' + err);
+        showStatus('Copy failed: ' + err, 'error');
       }
     });
 

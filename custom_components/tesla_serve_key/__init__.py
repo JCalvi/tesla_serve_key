@@ -93,7 +93,7 @@ class TeslaPemView(HomeAssistantView):
         
         try:
             # Read file on every request to ensure we serve the latest version
-            with open(pem_path, "r") as f:
+            with open(pem_path, "r", encoding="utf-8") as f:
                 pem_content = f.read()
             
             return web.Response(
