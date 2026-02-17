@@ -17,3 +17,6 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# PEM files (should not be committed to repository)
+*.pem
