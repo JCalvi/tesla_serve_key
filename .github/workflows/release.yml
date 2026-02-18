@@ -37,9 +37,7 @@ jobs:
       - name: Create zip file
         if: steps.check_tag.outputs.exists == 'false'
         run: |
-          cd custom_components
-          zip -r ../tesla_serve_key.zip tesla_serve_key/
-          cd ..
+          zip -r tesla_serve_key.zip custom_components/
 
       - name: Create Release
         if: steps.check_tag.outputs.exists == 'false'
