@@ -7,6 +7,7 @@ A Home Assistant custom integration that serves your Tesla public key at the req
 - ✅ Serves PEM file at `/.well-known/appspecific/com.tesla.3p.public-key.pem`
 - ✅ Easy verification through Home Assistant UI
 - ✅ Automatic file discovery from config directory
+- ✅ Home Assistant URL/port auto-detection (HAOS 2026.8 compatible, including port 80)
 - ✅ No authentication required for the endpoint (as per Tesla requirements)
 
 ## Installation
@@ -79,8 +80,20 @@ A simple verification page is available (if the `www` directory exists).
 No additional configuration is required. The integration will:
 
 1. Automatically detect your PEM file location
-2. Serve it at the required Tesla endpoint
-3. Handle all HTTP requests without authentication
+2. Derive the Home Assistant base URL/port from runtime config when explicit internal/external URLs are not set
+3. Use Home Assistant runtime port (including port 80) instead of assuming `8123`
+4. Respect explicit overrides from configured URLs or `TESLA_SERVE_KEY_PORT`
+5. Serve it at the required Tesla endpoint
+6. Handle all HTTP requests without authentication
+
+## Release Notes
+
+### 0.3.1
+
+- Updated URL/port resolution for Home Assistant OS 2026.8 behavior.
+- Port `80` is now treated as a valid/default HTTP port when deriving local URLs.
+- Verification no longer assumes Home Assistant is on port `8123`; it derives runtime port dynamically.
+- Explicitly configured URLs and explicit port override (`TESLA_SERVE_KEY_PORT`) are respected.
 
 ## Troubleshooting
 
