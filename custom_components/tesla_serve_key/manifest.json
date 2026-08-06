@@ -1,11 +1,12 @@
 {
   "domain": "tesla_serve_key",
   "name": "Tesla Serve Key",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "documentation": "https://github.com/JCalvi/tesla_serve_key",
+  "issue_tracker": "https://github.com/JCalvi/tesla_serve_key/issues",
   "requirements": [],
   "dependencies": [],
-  "codeowners": ["@jcalvi"],
+  "codeowners": ["@JCalvi"],
   "config_flow": true,
   "iot_class": "local_polling"
 }
