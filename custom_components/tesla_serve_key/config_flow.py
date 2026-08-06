@@ -13,6 +13,8 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .url_utils import resolve_pem_url
+
 DOMAIN = "tesla_serve_key"
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,14 +75,7 @@ class TeslaServeKeyOptionsFlow(OptionsFlow):
     async def _verify_pem(self) -> dict[str, Any]:
         """Verify the PEM file is being served."""
         try:
-            if self.hass.config.external_url:
-                base_url = self.hass.config.external_url
-            elif self.hass.config.internal_url:
-                base_url = self.hass.config.internal_url
-            else:
-                base_url = "http://localhost:8123"
-            
-            pem_url = f"{base_url}/.well-known/appspecific/com.tesla.3p.public-key.pem"
+            pem_url = resolve_pem_url(self.hass)
             session = async_get_clientsession(self.hass)
             
             async with session.get(pem_url, timeout=10) as response:
