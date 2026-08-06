@@ -2,59 +2,111 @@ name: Create Release
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "custom_components/tesla_serve_key/manifest.json"
-  workflow_dispatch:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
 
 jobs:
   release:
+    name: Build and publish HACS release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout tagged source
+        uses: actions/checkout@v7
 
-      - name: Get version from manifest
-        id: get_version
+      - name: Validate release metadata
+        shell: bash
         run: |
-          VERSION=$(jq -r '.version' custom_components/tesla_serve_key/manifest.json)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
 
-      - name: Check if tag exists
-        id: check_tag
-        run: |
-          git fetch --tags
-          if git rev-parse "${{ steps.get_version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+          TAG="${GITHUB_REF_NAME}"
+          TAG_VERSION="${TAG#v}"
+          MANIFEST="custom_components/tesla_serve_key/manifest.json"
+          MANIFEST_VERSION="$(jq -er '.version' "$MANIFEST")"
+
+          if [[ "$TAG" != v* ]]; then
+            echo "Release tag must start with v."
+            exit 1
           fi
 
-      - name: Create release zip (no nested custom_components)
-        if: steps.check_tag.outputs.exists == 'false'
+          if [[ "$TAG_VERSION" != "$MANIFEST_VERSION" ]]; then
+            echo "Tag version and manifest version do not match."
+            echo "Tag:      $TAG_VERSION"
+            echo "Manifest: $MANIFEST_VERSION"
+            exit 1
+          fi
+
+          jq -e '
+            .zip_release == true and
+            .filename == "tesla_serve_key.zip" and
+            .hide_default_branch == true
+          ' hacs.json >/dev/null || {
+            echo "hacs.json is not configured for the expected release ZIP."
+            exit 1
+          }
+
+          test -f "$MANIFEST"
+          test -f "custom_components/tesla_serve_key/__init__.py"
+
+      - name: Build HACS release ZIP
+        shell: bash
+        working-directory: custom_components/tesla_serve_key
         run: |
-          mkdir -p dist
-          cd custom_components
-          zip -r ../dist/tesla_serve_key.zip tesla_serve_key
+          set -euo pipefail
 
-      - name: Create Release
-        if: steps.check_tag.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v2
+          zip -r "$GITHUB_WORKSPACE/tesla_serve_key.zip" . \
+            -x "__pycache__/*" \
+               "*/__pycache__/*" \
+               "*.pyc" \
+               ".DS_Store"
+
+      - name: Verify HACS installation layout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP="tesla_serve_key.zip"
+
+          # Confirm the archive itself is valid.
+          unzip -t "$ZIP"
+
+          # These must be at the root of the ZIP.
+          unzip -Z1 "$ZIP" | grep -qx "manifest.json"
+          unzip -Z1 "$ZIP" | grep -qx "__init__.py"
+
+          # These directories must not be at the root of the ZIP.
+          if unzip -Z1 "$ZIP" |
+            grep -Eq "^(tesla_serve_key/|custom_components/)"; then
+            echo "ZIP contains an unwanted top-level directory."
+            unzip -Z1 "$ZIP"
+            exit 1
+          fi
+
+          # Simulate exactly where HACS extracts the archive.
+          TEMP_ROOT="$(mktemp -d)"
+          INSTALL_DIR="$TEMP_ROOT/config/custom_components/tesla_serve_key"
+
+          mkdir -p "$INSTALL_DIR"
+          unzip -q "$ZIP" -d "$INSTALL_DIR"
+
+          test -f "$INSTALL_DIR/manifest.json"
+          test -f "$INSTALL_DIR/__init__.py"
+
+          jq -e '
+            .domain == "tesla_serve_key" and
+            (.version | type == "string")
+          ' "$INSTALL_DIR/manifest.json" >/dev/null
+
+          echo "Verified installation layout:"
+          find "$INSTALL_DIR" -maxdepth 2 -type f | sort
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.get_version.outputs.tag }}
-          name: Release ${{ steps.get_version.outputs.tag }}
-          body: |
-            Release version ${{ steps.get_version.outputs.version }}
-
-            ## Installation
-            1. Download `tesla_serve_key.zip`
-            2. Extract so this path exists:
-               `custom_components/tesla_serve_key/...`
-            3. Restart Home Assistant
-          files: dist/tesla_serve_key.zip
-          draft: false
-          prerelease: false
+          name: Tesla Serve Key ${{ github.ref_name }}
+          files: tesla_serve_key.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
