@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout tagged source
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
 
       - name: Validate release metadata
         shell: bash
