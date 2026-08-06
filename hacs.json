@@ -1,1 +1,8 @@
-{"name": "Tesla Serve Key","content_in_root": false,"filename": "tesla_serve_key.zip","homeassistant": "2023.1.0","render_readme": true,"zip_release": true}
+{
+  "name": "Tesla Serve Key",
+  "zip_release": true,
+  "filename": "tesla_serve_key.zip",
+  "hide_default_branch": true,
+  "render_readme": true,
+  "homeassistant": "2023.1.0"
+}
