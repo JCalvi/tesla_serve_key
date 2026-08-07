@@ -1,9 +1,17 @@
 name: Create Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  release:
+    types:
+      - published
+
+  # Allows an existing release to be rebuilt manually if required.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag, for example v0.3.2"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,16 +21,24 @@ jobs:
     name: Build and publish HACS release
     runs-on: ubuntu-latest
 
+    env:
+      RELEASE_TAG: >-
+        ${{ github.event_name == 'release'
+            && github.event.release.tag_name
+            || inputs.tag }}
+
     steps:
-      - name: Checkout tagged source
-        uses: actions/checkout@v7
+      - name: Checkout released source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Validate release metadata
         shell: bash
         run: |
           set -euo pipefail
 
-          TAG="${GITHUB_REF_NAME}"
+          TAG="${RELEASE_TAG}"
           TAG_VERSION="${TAG#v}"
           MANIFEST="custom_components/tesla_serve_key/manifest.json"
           MANIFEST_VERSION="$(jq -er '.version' "$MANIFEST")"
@@ -70,14 +86,13 @@ jobs:
 
           ZIP="tesla_serve_key.zip"
 
-          # Confirm the archive itself is valid.
           unzip -t "$ZIP"
 
-          # These must be at the root of the ZIP.
+          # Required files must be at the ZIP root.
           unzip -Z1 "$ZIP" | grep -qx "manifest.json"
           unzip -Z1 "$ZIP" | grep -qx "__init__.py"
 
-          # These directories must not be at the root of the ZIP.
+          # Reject unwanted wrapper directories.
           if unzip -Z1 "$ZIP" |
             grep -Eq "^(tesla_serve_key/|custom_components/)"; then
             echo "ZIP contains an unwanted top-level directory."
@@ -85,7 +100,7 @@ jobs:
             exit 1
           fi
 
-          # Simulate exactly where HACS extracts the archive.
+          # Simulate the HACS extraction destination.
           TEMP_ROOT="$(mktemp -d)"
           INSTALL_DIR="$TEMP_ROOT/config/custom_components/tesla_serve_key"
 
@@ -103,10 +118,10 @@ jobs:
           echo "Verified installation layout:"
           find "$INSTALL_DIR" -maxdepth 2 -type f | sort
 
-      - name: Publish GitHub release
+      - name: Add ZIP to GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          name: Tesla Serve Key ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
           files: tesla_serve_key.zip
           fail_on_unmatched_files: true
-          generate_release_notes: true
+          overwrite_files: true
